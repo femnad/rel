@@ -16,11 +16,12 @@ const (
 )
 
 type rust struct {
+	repo     string
 	topLevel string
 }
 
-func (r rust) assetFile(executable, version string) string {
-	return fmt.Sprintf("%s-%s-%s", executable, version, platform)
+func (r rust) assetFile(version string) string {
+	return fmt.Sprintf("%s-%s-%s", r.repo, version, platform)
 }
 
 func (r rust) assetDir() (string, error) {
@@ -75,6 +76,6 @@ func (r rust) currentVersion() (string, error) {
 	return "", fmt.Errorf("unable to find version line in %s", cargoConfig)
 }
 
-func cargoCompiler(topLevel string) compiler {
-	return rust{topLevel: topLevel}
+func cargoCompiler(repo, topLevel string) compiler {
+	return rust{repo: repo, topLevel: topLevel}
 }

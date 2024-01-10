@@ -4,7 +4,7 @@ import "os"
 
 type compiler interface {
 	assetDir() (string, error)
-	assetFile(executable, version string) string
+	assetFile(string) string
 	canCompile() (bool, error)
 	cleanup() error
 	compile() error

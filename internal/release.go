@@ -15,7 +15,7 @@ import (
 
 var (
 	versionLinePattern = `version = "([0-9]+\.[0-9]+\.[0-9]+)"`
-	compilerFns        = []func(string) compiler{
+	compilerFns        = []func(string, string) compiler{
 		cargoCompiler,
 		goCompiler,
 	}
@@ -67,6 +67,7 @@ func NewReleaser(path string) (r Releaser, err error) {
 		return
 	}
 
+	owner, repo := gitClient.Owner(), gitClient.Repo()
 	topLevel, err := findTopLevel()
 	if err != nil {
 		return
@@ -75,7 +76,7 @@ func NewReleaser(path string) (r Releaser, err error) {
 	var canCompile bool
 	var comp compiler
 	for _, fn := range compilerFns {
-		comp = fn(topLevel)
+		comp = fn(repo, topLevel)
 		canCompile, err = comp.canCompile()
 		if err != nil {
 			return r, fmt.Errorf("error determining compiler capability: %v", err)
@@ -96,8 +97,6 @@ func NewReleaser(path string) (r Releaser, err error) {
 	if err != nil {
 		return
 	}
-
-	owner, repo := gitClient.Owner(), gitClient.Repo()
 
 	client := github.New(owner, repo, token)
 
@@ -135,7 +134,7 @@ func (r Releaser) ensureRelease(ctx context.Context, hash, version string) error
 	filePath := path.Join(assetDir, r.repo)
 	asset := github.AssetSpec{
 		ReleaseSpec: spec,
-		Name:        r.comp.assetFile(r.repo, version),
+		Name:        r.comp.assetFile(version),
 		Path:        filePath,
 	}
 	err = r.gh.UploadReleaseAsset(ctx, asset)

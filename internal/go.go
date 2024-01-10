@@ -3,6 +3,7 @@ package internal
 import (
 	"fmt"
 	"os"
+	"path"
 	"strings"
 
 	marecmd "github.com/femnad/mare/cmd"
@@ -13,17 +14,16 @@ const (
 )
 
 type goApp struct {
-	executable string
-	topLevel   string
+	repo     string
+	topLevel string
 }
 
 func (g goApp) assetDir() (string, error) {
 	return g.topLevel, nil
 }
 
-func (g goApp) assetFile(executable, version string) string {
-	g.executable = executable
-	return fmt.Sprintf("%s-%s-%s", executable, version, goPlatform)
+func (g goApp) assetFile(version string) string {
+	return fmt.Sprintf("%s-%s-%s", g.repo, version, goPlatform)
 }
 
 func (g goApp) canCompile() (bool, error) {
@@ -31,11 +31,15 @@ func (g goApp) canCompile() (bool, error) {
 }
 
 func (g goApp) cleanup() error {
-	if g.executable == "" {
+	artifact := path.Join(g.topLevel, g.repo)
+	_, err := os.Stat(artifact)
+	if os.IsNotExist(err) {
 		return nil
+	} else if err != nil {
+		return err
 	}
 
-	return os.Remove(g.executable)
+	return os.Remove(artifact)
 }
 
 func (g goApp) compile() error {
@@ -58,6 +62,6 @@ func (g goApp) currentVersion() (string, error) {
 	return fields[len(fields)-1], nil
 }
 
-func goCompiler(topLevel string) compiler {
-	return goApp{topLevel: topLevel}
+func goCompiler(repo, topLevel string) compiler {
+	return goApp{repo: repo, topLevel: topLevel}
 }

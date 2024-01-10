@@ -12,7 +12,7 @@ import (
 
 const (
 	name    = "rel"
-	version = "0.1.0"
+	version = "0.1.1"
 )
 
 type args struct {
