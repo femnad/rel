@@ -17,6 +17,7 @@ var (
 	versionLinePattern = `version = "([0-9]+\.[0-9]+\.[0-9]+)"`
 	compilerFns        = []func(string) compiler{
 		cargoCompiler,
+		goCompiler,
 	}
 )
 
