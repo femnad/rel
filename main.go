@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/alexflint/go-arg"
@@ -9,12 +10,17 @@ import (
 	"github.com/femnad/rel/internal"
 )
 
+const (
+	name    = "rel"
+	version = "0.1.0"
+)
+
 type args struct {
 	Path string `arg:"positional" default:"." help:"Repo path"`
 }
 
 func (args) Version() string {
-	return "rel 0.1.0"
+	return fmt.Sprintf("%s v%s", name, version)
 }
 
 func release(ctx context.Context, path string) error {
