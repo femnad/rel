@@ -33,19 +33,7 @@ func (r rust) assetDir() (string, error) {
 }
 
 func (r rust) canCompile() (bool, error) {
-	err := os.Chdir(r.topLevel)
-	if err != nil {
-		return false, err
-	}
-
-	_, err = os.Stat(cargoConfig)
-	if os.IsNotExist(err) {
-		return false, err
-	} else if err == nil {
-		return true, nil
-	}
-
-	return false, err
+	return canCompileWith(cargoConfig, r.topLevel)
 }
 
 func (r rust) compile() error {

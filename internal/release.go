@@ -77,7 +77,7 @@ func NewReleaser(path string) (r Releaser, err error) {
 		comp = fn(topLevel)
 		canCompile, err = comp.canCompile()
 		if err != nil {
-			return
+			return r, fmt.Errorf("error determining compiler capability: %v", err)
 		}
 
 		if !canCompile {
