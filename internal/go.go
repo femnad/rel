@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"regexp"
 	"strings"
 
 	marecmd "github.com/femnad/mare/cmd"
 )
 
 const (
-	goPlatform = "linux-x86_64 "
+	goPlatform     = "linux-x86_64 "
+	versionPattern = "(v)?[0-9]+\\.[0-9]+\\.[0-9]+"
 )
 
 type goApp struct {
@@ -59,7 +61,18 @@ func (g goApp) currentVersion() (string, error) {
 	}
 
 	fields := strings.Split(strings.TrimSpace(out.Stdout), " ")
-	return fields[len(fields)-1], nil
+	version := fields[len(fields)-1]
+
+	re, err := regexp.Compile(versionPattern)
+	if err != nil {
+		return "", err
+	}
+
+	if !re.MatchString(version) {
+		return "", fmt.Errorf("version %s does not match expected format", version)
+	}
+
+	return version, nil
 }
 
 func goCompiler(repo, topLevel string) compiler {
