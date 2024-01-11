@@ -16,7 +16,7 @@ import (
 var (
 	versionLinePattern = `version = "([0-9]+\.[0-9]+\.[0-9]+)"`
 	compilerFns        = []func(string, string) compiler{
-		cargoCompiler,
+		rustCompiler,
 		goCompiler,
 	}
 )
@@ -82,11 +82,10 @@ func NewReleaser(path string) (r Releaser, err error) {
 			return r, fmt.Errorf("error determining compiler capability: %v", err)
 		}
 
-		if !canCompile {
-			continue
+		if canCompile {
+			r.comp = comp
+			break
 		}
-
-		r.comp = comp
 	}
 
 	if !canCompile {

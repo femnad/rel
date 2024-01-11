@@ -76,6 +76,6 @@ func (r rust) currentVersion() (string, error) {
 	return "", fmt.Errorf("unable to find version line in %s", cargoConfig)
 }
 
-func cargoCompiler(repo, topLevel string) compiler {
+func rustCompiler(repo, topLevel string) compiler {
 	return rust{repo: repo, topLevel: topLevel}
 }
