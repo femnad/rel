@@ -9,6 +9,7 @@ type compiler interface {
 	cleanup() error
 	compile() error
 	currentVersion() (string, error)
+	name() string
 }
 
 func canCompileWith(file, topLevel string) (bool, error) {

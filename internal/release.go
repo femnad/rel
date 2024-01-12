@@ -6,21 +6,17 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 
-	"gopkg.in/yaml.v3"
-
-	"github.com/femnad/mare"
-	"github.com/femnad/mare/cmd"
 	"github.com/femnad/rel/git"
 	"github.com/femnad/rel/github"
+	"github.com/femnad/rel/log"
 )
 
 var (
 	versionLinePattern = `version = "([0-9]+\.[0-9]+\.[0-9]+)"`
 	compilerFns        = []func(string, string) compiler{
-		rustCompiler,
 		goCompiler,
+		rustCompiler,
 	}
 )
 
@@ -61,46 +57,6 @@ func findTopLevel() (string, error) {
 	return "", fmt.Errorf("unable to find top level")
 }
 
-func tokenFromCmd(command string) (string, error) {
-	out, err := cmd.RunFmtErr(cmd.Input{Command: command})
-	if err != nil {
-		return "", err
-	}
-
-	return strings.TrimSpace(out.Stdout), nil
-}
-
-func getToken(cfg config) (string, error) {
-	if cfg.TokenFromGH {
-		return tokenFromCmd("gh auth token")
-	} else if cfg.TokenCommand != "" {
-		return tokenFromCmd(cfg.TokenCommand)
-	} else if cfg.Token != "" {
-		return cfg.Token, nil
-	}
-
-	return "", fmt.Errorf("unable to determine token getter command")
-}
-
-func parseConfig(configFile string) (cfg config, err error) {
-	configFile = mare.ExpandUser(configFile)
-	_, err = os.Stat(configFile)
-	if os.IsNotExist(err) {
-		return config{TokenFromGH: true}, nil
-	} else if err != nil {
-		return
-	}
-
-	file, err := os.Open(configFile)
-	if err != nil {
-		return
-	}
-
-	decoder := yaml.NewDecoder(file)
-	err = decoder.Decode(&cfg)
-	return
-}
-
 func NewReleaser(configFile, path string) (r Releaser, err error) {
 	gitClient, err := git.New(path)
 	if err != nil {
@@ -123,6 +79,8 @@ func NewReleaser(configFile, path string) (r Releaser, err error) {
 		}
 
 		if canCompile {
+			log.Logger.Debugf("Using %s compiler", comp.name())
+
 			r.comp = comp
 			break
 		}
@@ -164,6 +122,8 @@ func (r Releaser) ensureRelease(ctx context.Context, hash, version string) error
 		return err
 	}
 	spec.ID = id
+
+	log.Logger.Debug("Compiling release binary")
 
 	err = r.comp.compile()
 	if err != nil {

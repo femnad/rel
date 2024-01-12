@@ -8,6 +8,8 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+
+	"github.com/femnad/rel/log"
 )
 
 const (
@@ -64,6 +66,8 @@ func (c Client) Owner() string {
 }
 
 func (c Client) Push() error {
+	log.Logger.Debug("Pushing commits and tags")
+
 	err := c.gitRepo.Push(&git.PushOptions{FollowTags: true})
 	if err == nil || errors.Is(err, git.NoErrAlreadyUpToDate) {
 		return nil
@@ -89,7 +93,7 @@ func (c Client) Tag(version string) (string, error) {
 		}
 
 		if version == reference.Name().Short() {
-			fmt.Printf("tag %s already exists\n", version)
+			log.Logger.Noticef("Tag %s already exists", version)
 			hash = reference.Hash()
 		}
 		return nil
@@ -108,7 +112,7 @@ func (c Client) Tag(version string) (string, error) {
 	}
 	hash = head.Hash()
 
-	fmt.Printf("tagging %s with %s\n", hash, version)
+	log.Logger.Infof("Tagging %s with %s", hash, version)
 	_, err = c.gitRepo.CreateTag(version, hash, nil)
 	if err != nil {
 		return "", err

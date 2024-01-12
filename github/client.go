@@ -8,6 +8,8 @@ import (
 	"os"
 
 	gh "github.com/google/go-github/v57/github"
+
+	"github.com/femnad/rel/log"
 )
 
 type GitHub struct {
@@ -79,6 +81,8 @@ func (g GitHub) createRelease(ctx context.Context, spec ReleaseSpec) (*gh.Reposi
 		TargetCommitish:      &spec.Hash,
 	}
 
+	log.Logger.Infof("Creating release %s", *rel.Name)
+
 	rel, resp, err := g.client.Repositories.CreateRelease(ctx, g.owner, g.repo, rel)
 	if err != nil {
 		body, readErr := io.ReadAll(resp.Body)
@@ -105,7 +109,9 @@ func (g GitHub) EnsureRelease(ctx context.Context, spec ReleaseSpec) (int64, err
 			return 0, err
 		}
 	} else if !rel.GetDraft() {
-		return 0, fmt.Errorf("release %s exists but is not a draft release", tag)
+		return 0, fmt.Errorf("release %s exists but is not a draft release", *rel.Name)
+	} else {
+		log.Logger.Noticef("Release %s already exists as a draft release", *rel.Name)
 	}
 
 	return *rel.ID, nil
@@ -121,6 +127,8 @@ func (g GitHub) UploadReleaseAsset(ctx context.Context, spec AssetSpec) error {
 		return err
 	}
 	defer file.Close()
+
+	log.Logger.Infof("Uploading release asset %s", opts.Name)
 
 	_, resp, err := g.client.Repositories.UploadReleaseAsset(ctx, g.owner, g.repo, spec.ReleaseSpec.ID, opts, file)
 	if err == nil {
@@ -139,6 +147,8 @@ func (g GitHub) UploadReleaseAsset(ctx context.Context, spec AssetSpec) error {
 func (g GitHub) FinalizeRelease(ctx context.Context, spec ReleaseSpec) error {
 	rel, err := g.getReleaseByID(ctx, spec.ID)
 	*rel.Draft = false
+
+	log.Logger.Infof("Removing draft status from %s", *rel.Name)
 
 	_, _, err = g.client.Repositories.EditRelease(ctx, g.owner, g.repo, *rel.ID, rel)
 	return err

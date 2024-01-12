@@ -75,6 +75,10 @@ func (g goApp) currentVersion() (string, error) {
 	return version, nil
 }
 
+func (goApp) name() string {
+	return "Go"
+}
+
 func goCompiler(repo, topLevel string) compiler {
 	return goApp{repo: repo, topLevel: topLevel}
 }

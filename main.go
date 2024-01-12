@@ -3,16 +3,16 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/alexflint/go-arg"
 
 	"github.com/femnad/rel/internal"
+	"github.com/femnad/rel/log"
 )
 
 const (
 	name    = "rel"
-	version = "0.1.3"
+	version = "0.2.0"
 )
 
 type args struct {
@@ -37,8 +37,10 @@ func main() {
 	var parsed args
 	arg.MustParse(&parsed)
 
+	log.Init()
+
 	err := release(context.Background(), parsed.ConfigFile, parsed.Path)
 	if err != nil {
-		log.Fatal(err)
+		log.Logger.Fatalf("Error creating release: %v", err)
 	}
 }

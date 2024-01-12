@@ -7,6 +7,7 @@ require (
 	github.com/femnad/mare v0.11.0
 	github.com/go-git/go-git/v5 v5.11.0
 	github.com/google/go-github/v57 v57.0.0
+	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	gopkg.in/yaml.v3 v3.0.1
 )
 
