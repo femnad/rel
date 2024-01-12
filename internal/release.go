@@ -8,6 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"gopkg.in/yaml.v3"
+
+	"github.com/femnad/mare"
 	"github.com/femnad/mare/cmd"
 	"github.com/femnad/rel/git"
 	"github.com/femnad/rel/github"
@@ -20,6 +23,12 @@ var (
 		goCompiler,
 	}
 )
+
+type config struct {
+	TokenFromGH  bool   `yaml:"token_from_gh"`
+	TokenCommand string `yaml:"token_command"`
+	Token        string `yaml:"token"`
+}
 
 type Releaser struct {
 	gh        github.GitHub
@@ -52,8 +61,8 @@ func findTopLevel() (string, error) {
 	return "", fmt.Errorf("unable to find top level")
 }
 
-func getToken() (string, error) {
-	out, err := cmd.RunFmtErr(cmd.Input{Command: "gh auth token"})
+func tokenFromCmd(command string) (string, error) {
+	out, err := cmd.RunFmtErr(cmd.Input{Command: command})
 	if err != nil {
 		return "", err
 	}
@@ -61,7 +70,38 @@ func getToken() (string, error) {
 	return strings.TrimSpace(out.Stdout), nil
 }
 
-func NewReleaser(path string) (r Releaser, err error) {
+func getToken(cfg config) (string, error) {
+	if cfg.TokenFromGH {
+		return tokenFromCmd("gh auth token")
+	} else if cfg.TokenCommand != "" {
+		return tokenFromCmd(cfg.TokenCommand)
+	} else if cfg.Token != "" {
+		return cfg.Token, nil
+	}
+
+	return "", fmt.Errorf("unable to determine token getter command")
+}
+
+func parseConfig(configFile string) (cfg config, err error) {
+	configFile = mare.ExpandUser(configFile)
+	_, err = os.Stat(configFile)
+	if os.IsNotExist(err) {
+		return config{TokenFromGH: true}, nil
+	} else if err != nil {
+		return
+	}
+
+	file, err := os.Open(configFile)
+	if err != nil {
+		return
+	}
+
+	decoder := yaml.NewDecoder(file)
+	err = decoder.Decode(&cfg)
+	return
+}
+
+func NewReleaser(configFile, path string) (r Releaser, err error) {
 	gitClient, err := git.New(path)
 	if err != nil {
 		return
@@ -92,7 +132,12 @@ func NewReleaser(path string) (r Releaser, err error) {
 		return r, fmt.Errorf("unable to find suitable compiler")
 	}
 
-	token, err := getToken()
+	cfg, err := parseConfig(configFile)
+	if err != nil {
+		return
+	}
+
+	token, err := getToken(cfg)
 	if err != nil {
 		return
 	}

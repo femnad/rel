@@ -16,15 +16,16 @@ const (
 )
 
 type args struct {
-	Path string `arg:"positional" default:"." help:"Repo path"`
+	ConfigFile string `arg:"-f,--file" default:"~/.config/rel/rel.yml" help:"Config file path"`
+	Path       string `arg:"positional" default:"." help:"Repo path"`
 }
 
 func (args) Version() string {
 	return fmt.Sprintf("%s v%s", name, version)
 }
 
-func release(ctx context.Context, path string) error {
-	r, err := internal.NewReleaser(path)
+func release(ctx context.Context, configFile, path string) error {
+	r, err := internal.NewReleaser(configFile, path)
 	if err != nil {
 		return err
 	}
@@ -36,7 +37,7 @@ func main() {
 	var parsed args
 	arg.MustParse(&parsed)
 
-	err := release(context.Background(), parsed.Path)
+	err := release(context.Background(), parsed.ConfigFile, parsed.Path)
 	if err != nil {
 		log.Fatal(err)
 	}
