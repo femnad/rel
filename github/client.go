@@ -81,7 +81,7 @@ func (g GitHub) createRelease(ctx context.Context, spec ReleaseSpec) (*gh.Reposi
 		TargetCommitish:      &spec.Hash,
 	}
 
-	log.Logger.Infof("Creating release %s", *rel.Name)
+	log.Logger.Infof("Creating release %s as draft", *rel.Name)
 
 	rel, resp, err := g.client.Repositories.CreateRelease(ctx, g.owner, g.repo, rel)
 	if err != nil {

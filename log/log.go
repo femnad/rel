@@ -9,7 +9,7 @@ import (
 var (
 	Logger = logging.MustGetLogger("Logger")
 	format = logging.MustStringFormatter(
-		`%{color}%{message}%{color:reset}`,
+		`%{color}[%{level}] %{message}%{color:reset}`,
 	)
 )
 
