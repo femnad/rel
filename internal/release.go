@@ -155,6 +155,13 @@ func (r Releaser) Release(ctx context.Context) error {
 		return err
 	}
 
+	defer func() {
+		cleanupErr := r.comp.cleanup()
+		if cleanupErr != nil {
+			log.Logger.Errorf("error cleaning up: %v", cleanupErr)
+		}
+	}()
+
 	err = r.comp.compile()
 	if err != nil {
 		return err
@@ -170,10 +177,5 @@ func (r Releaser) Release(ctx context.Context) error {
 		return err
 	}
 
-	err = r.ensureRelease(ctx, hash, version)
-	if err != nil {
-		return err
-	}
-
-	return r.comp.cleanup()
+	return r.ensureRelease(ctx, hash, version)
 }
