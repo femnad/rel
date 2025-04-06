@@ -17,7 +17,7 @@ const (
 
 type args struct {
 	ConfigFile string `arg:"-f,--file" default:"~/.config/rel/rel.yml" help:"Config file path"`
-	Path       string `arg:"positional" default:"." help:"Repo path"`
+	Path       string `arg:"positional" help:"Repo path"`
 }
 
 func (args) Version() string {
@@ -27,7 +27,7 @@ func (args) Version() string {
 func release(ctx context.Context, configFile, path string) error {
 	r, err := internal.NewReleaser(configFile, path)
 	if err != nil {
-		return err
+		return fmt.Errorf("error determining releaser: %w", err)
 	}
 
 	return r.Release(ctx)

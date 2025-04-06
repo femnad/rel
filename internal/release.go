@@ -35,21 +35,25 @@ type Releaser struct {
 	topLevel  string
 }
 
-func findTopLevel() (string, error) {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return "", err
+func findTopLevel(repoPath string) (string, error) {
+	lookupPath := repoPath
+	var err error
+	if lookupPath == "" {
+		lookupPath, err = os.Getwd()
+		if err != nil {
+			return "", err
+		}
 	}
 
 	for {
-		repoPath := filepath.Join(cwd, ".git")
-		_, err = os.Stat(repoPath)
+		gitDir := filepath.Join(lookupPath, ".git")
+		_, err = os.Stat(gitDir)
 		if err == nil {
-			return cwd, nil
+			return lookupPath, nil
 		}
 
-		cwd = filepath.Dir(cwd)
-		if cwd == filepath.Dir(cwd) {
+		lookupPath = filepath.Dir(lookupPath)
+		if lookupPath == filepath.Dir(lookupPath) {
 			break
 		}
 	}
@@ -58,16 +62,17 @@ func findTopLevel() (string, error) {
 }
 
 func NewReleaser(configFile, path string) (r Releaser, err error) {
-	gitClient, err := git.New(path)
+	topLevel, err := findTopLevel(path)
 	if err != nil {
-		return
+		return r, fmt.Errorf("error determining top level: %w", err)
+	}
+
+	gitClient, err := git.New(topLevel)
+	if err != nil {
+		return r, fmt.Errorf("error creating git client: %w", err)
 	}
 
 	owner, repo := gitClient.Owner(), gitClient.Repo()
-	topLevel, err := findTopLevel()
-	if err != nil {
-		return
-	}
 
 	var canCompile bool
 	var comp compiler
@@ -92,12 +97,12 @@ func NewReleaser(configFile, path string) (r Releaser, err error) {
 
 	cfg, err := parseConfig(configFile)
 	if err != nil {
-		return
+		return r, fmt.Errorf("error parsing config: %v", err)
 	}
 
 	token, err := getToken(cfg)
 	if err != nil {
-		return
+		return r, fmt.Errorf("error getting token: %v", err)
 	}
 
 	client := github.New(owner, repo, token)
@@ -152,7 +157,7 @@ func (r Releaser) ensureRelease(ctx context.Context, hash, version string) error
 func (r Releaser) Release(ctx context.Context) error {
 	version, err := r.comp.currentVersion()
 	if err != nil {
-		return err
+		return fmt.Errorf("error determining current version: %v", err)
 	}
 
 	defer func() {
@@ -164,17 +169,17 @@ func (r Releaser) Release(ctx context.Context) error {
 
 	err = r.comp.compile()
 	if err != nil {
-		return err
+		return fmt.Errorf("error compiling binary: %v", err)
 	}
 
 	hash, err := r.gitClient.Tag(version)
 	if err != nil {
-		return err
+		return fmt.Errorf("error determining commit hash: %v", err)
 	}
 
 	err = r.gitClient.Push()
 	if err != nil {
-		return err
+		return fmt.Errorf("error pushing commits and tags: %v", err)
 	}
 
 	return r.ensureRelease(ctx, hash, version)
