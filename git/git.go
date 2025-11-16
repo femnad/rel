@@ -3,6 +3,7 @@ package git
 import (
 	"errors"
 	"fmt"
+	"os"
 	"regexp"
 	"strings"
 
@@ -17,8 +18,9 @@ const (
 )
 
 var (
-	gitSuffix   = ".git"
-	repoPattern = "git@github.com:([^/]+)/([^/]+)"
+	gitSuffix         = ".git"
+	onePasswordSocket = os.ExpandEnv("$HOME/.1password/agent.sock")
+	repoPattern       = "git@github.com:([^/]+)/([^/]+)"
 )
 
 type Client struct {
@@ -68,7 +70,15 @@ func (c Client) Owner() string {
 func (c Client) Push() error {
 	log.Logger.Debug("Pushing commits and tags")
 
-	err := c.gitRepo.Push(&git.PushOptions{FollowTags: true})
+	_, err := os.Stat(onePasswordSocket)
+	if err == nil {
+		err = os.Setenv("SSH_AUTH_SOCK", onePasswordSocket)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = c.gitRepo.Push(&git.PushOptions{FollowTags: true})
 	if err == nil || errors.Is(err, git.NoErrAlreadyUpToDate) {
 		return nil
 	}
